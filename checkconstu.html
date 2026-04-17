@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DLC Calculator PRO</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: 'Segoe UI';
+  background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  color:#fff;
+  padding:20px;
+}
+.container {
+  max-width:600px;
+  margin:auto;
+  background:#ffffff10;
+  backdrop-filter: blur(12px);
+  padding:20px;
+  border-radius:15px;
+}
+h2{text-align:center;}
+input,select{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border:none;
+  border-radius:8px;
+}
+button{
+  width:100%;
+  padding:12px;
+  background:#00ffd5;
+  border:none;
+  border-radius:10px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.result{
+  margin-top:15px;
+  background:#00000030;
+  padding:15px;
+  border-radius:10px;
+}
+.res-row{
+  display:flex;
+  justify-content:space-between;
+}
+.hidden{display:none;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>DLC Calculator PRO</h2>
+
+<select id="type" onchange="toggleFields()">
+<option value="plot">Residential Plot</option>
+<option value="constructed">Constructed Property</option>
+<option value="flat">Flat (Multistory)</option>
+</select>
+
+<input id="rate" placeholder="DLC Rate">
+
+<!-- Plot / Constructed -->
+<div id="normalArea">
+<input id="area" placeholder="Area (sq.ft)">
+</div>
+
+<!-- Flat special -->
+<div id="flatArea" class="hidden">
+<input id="landArea" placeholder="Land Area (sq.m)">
+<input id="builtArea" placeholder="Constructed Area (sq.ft)">
+</div>
+
+<select id="floor">
+<option value="1">With Roof Rights (100%)</option>
+<option value="0.7">Ground Floor (No Roof - 70%)</option>
+<option value="0.6">1st/2nd Floor (No Roof - 60%)</option>
+<option value="0.4">3rd+ Floor (No Roof - 40%)</option>
+</select>
+
+<select id="category">
+<option value="0.06">Male (6%)</option>
+<option value="0.05">Female General (5%)</option>
+<option value="0.04">Female SC/ST (4%)</option>
+<option value="0.04">Disabled (4%)</option>
+<option value="0.01">Transgender/BPL (1%)</option>
+</select>
+
+<select id="const">
+<option value="true">Constructed</option>
+<option value="false">Non-Constructed</option>
+</select>
+
+<button onclick="calc()">Calculate</button>
+
+<div class="result" id="res"></div>
+
+</div>
+
+<script>
+
+function toggleFields(){
+let type = document.getElementById('type').value;
+
+document.getElementById('flatArea').classList.toggle("hidden", type !== "flat");
+document.getElementById('normalArea').classList.toggle("hidden", type === "flat");
+}
+
+function calc(){
+
+let type = document.getElementById('type').value;
+let rate = parseFloat(document.getElementById('rate').value);
+let floor = parseFloat(document.getElementById('floor').value);
+let stampRate = parseFloat(document.getElementById('category').value);
+let isConst = document.getElementById('const').value==="true";
+
+let dlc=0, finalVal=0, construction=0;
+
+// ===== FLAT LOGIC =====
+if(type==="flat"){
+  let landArea = parseFloat(document.getElementById('landArea').value);
+  let builtArea = parseFloat(document.getElementById('builtArea').value);
+
+  dlc = rate * landArea;
+
+  let landVal = dlc * floor;
+
+  construction = builtArea * 1800;
+
+  finalVal = (landVal * 1.2) + construction;
+}
+
+// ===== OTHER =====
+else{
+  let area = parseFloat(document.getElementById('area').value);
+
+  let sqm = area / 10.764;
+
+  dlc = rate * sqm;
+
+  let landVal = dlc * floor;
+
+  construction = isConst ? area * 1800 : 0;
+
+  if(type==="constructed"){
+    finalVal = landVal + construction;
+  } else {
+    finalVal = dlc;
+  }
+}
+
+// ===== CALCULATIONS =====
+
+let stamp = finalVal * stampRate;
+
+let sur = (finalVal <= 999999) ? stamp*0.30 : stamp*0.33;
+
+let reg = finalVal * 0.01;
+
+let si = isConst 
+? (finalVal <= 4999999 ? 1000 : (finalVal <= 9999999 ? 2000 : 3000))
+: (finalVal <= 4999999 ? 500 : (finalVal <= 9999999 ? 1500 : 2500));
+
+let csi = 500;
+
+let total = stamp + sur + reg + si + csi;
+
+// ===== OUTPUT =====
+
+document.getElementById('res').innerHTML = `
+<div class="res-row"><span>DLC Value:</span><span>₹${dlc.toFixed(0)}</span></div>
+<div class="res-row"><span>Final Value:</span><span>₹${finalVal.toFixed(0)}</span></div>
+<div class="res-row"><span>Stamp Duty:</span><span>₹${stamp.toFixed(0)}</span></div>
+<div class="res-row"><span>Surcharge:</span><span>₹${sur.toFixed(0)}</span></div>
+<div class="res-row"><span>Registration:</span><span>₹${reg.toFixed(0)}</span></div>
+<div class="res-row"><span>SI Fee:</span><span>₹${si}</span></div>
+<div class="res-row"><span>CSI Fee:</span><span>₹500</span></div>
+<hr>
+<div class="res-row"><strong>Total:</strong><strong>₹${total.toFixed(0)}</strong></div>
+`;
+
+}
+
+</script>
+
+</body>
+</html>
